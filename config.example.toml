@@ -1,0 +1,11 @@
+[invite2ical]
+icsfile = file.ics
+summary = Event summary
+
+[invite2ical.email]
+server = imap.example.org
+username = user@example.org
+password = secret
+mailbox = INBOX
+sender = from@example.org
+fetch_number = 20
