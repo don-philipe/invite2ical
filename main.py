@@ -39,7 +39,7 @@ def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
     return attachments
 
 
-def generate_calendar(attachments: [], replace_summary: str, calendar=None):
+def generate_calendar(attachments: [], replace_summary: str, calendar=None, organizer=False, attendees=False):
     """
     Generate a calendar object out of overhanded ics attachments. Takes only VEVENT components into account. When
     calendar is given, check for every event if it is already present in that calendar (via UID). Events will be
@@ -47,6 +47,8 @@ def generate_calendar(attachments: [], replace_summary: str, calendar=None):
     :param attachments: a list of ics
     :param replace_summary: a string to replace the summary in all events
     :param calendar: a pre-existing calendar object to add events to, None by default
+    :param organizer: whether to include organizer field in events or not, defaults to False
+    :param attendees: whether to include attendee field in events or not, defaults to False
     :return: a calendar object with all events from attachments
     """
     if calendar is None:
@@ -60,6 +62,10 @@ def generate_calendar(attachments: [], replace_summary: str, calendar=None):
         cal = Calendar.from_ical(attachment)
         for event in cal.walk(name="VEVENT"):
             event['SUMMARY'] = replace_summary
+            if not organizer:
+                event['ORGANIZER'] = ""
+            if not attendees:
+                event['ATTENDEE'] = ""
             if event['UID'] not in uids.keys():
                 # just add, because UID doesn't exist in calendar yet
                 calendar.add_component(event)
