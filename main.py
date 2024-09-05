@@ -42,7 +42,8 @@ def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
 def generate_calendar(attachments: [], replace_summary: str, calendar=None):
     """
     Generate a calendar object out of overhanded ics attachments. Takes only VEVENT components into account. When
-    calendar is given, check for every event if it is already present in that calendar (via UID).
+    calendar is given, check for every event if it is already present in that calendar (via UID). Events will be
+    updated when the LAST-MODIFIED timestamp is newer.
     :param attachments: a list of ics
     :param replace_summary: a string to replace the summary in all events
     :param calendar: a pre-existing calendar object to add events to, None by default
@@ -51,16 +52,23 @@ def generate_calendar(attachments: [], replace_summary: str, calendar=None):
     if calendar is None:
         calendar = Calendar()
 
-    uids = []
+    uids = {}
     for event in calendar.walk(name="VEVENT"):
-        uids.append(event['UID'])
+        uids[event['UID']] = event['LAST-MODIFIED']
 
     for attachment in attachments:
         cal = Calendar.from_ical(attachment)
         for event in cal.walk(name="VEVENT"):
             event['SUMMARY'] = replace_summary
-            if event['UID'] not in uids:
+            if event['UID'] not in uids.keys():
+                # just add, because UID doesn't exist in calendar yet
                 calendar.add_component(event)
+            elif str(event['LAST-MODIFIED']) > str(uids[event['UID']]):
+                # replace event with a newer version
+                for idx, ev in enumerate(calendar.subcomponents):
+                    if ev['UID'] == event['UID']:
+                        calendar.subcomponents.pop(idx)
+                        calendar.add_component(event)
 
     return calendar
 
