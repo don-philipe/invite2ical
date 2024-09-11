@@ -19,7 +19,7 @@ def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
     imap = imaplib.IMAP4_SSL(server)
     imap.login(user, passwd)
 
-    status, messages = imap.select(mailbox)
+    status, messages = imap.select(mailbox, readonly=True)
     msgs = int(messages[0])
     for i in range(msgs, msgs - n, -1):
         res, msg = imap.fetch(str(i), "(RFC822)")
