@@ -1,8 +1,10 @@
 import configparser
 import email
+import hashlib
 from icalendar import Calendar
 import imaplib
 import os.path
+import sys
 
 
 def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
@@ -104,6 +106,19 @@ def write_calendar(filename: str, calendar):
         f.write(calendar.to_ical())
 
 
+def ics_hash(filename: str) -> str:
+    """
+    Check MD5 hash of given file. Used to check for file changes.
+    :param filename: the filename of the file to check
+    :return: MD5 hash value of the file or empty string of something failed
+    """
+    h = ""
+    with open(filename, "rb") as f:
+        h_obj = hashlib.file_digest(f, "md5")
+        h = h_obj.hexdigest()
+    return h
+
+
 def decode(part):
     """
     Decode an email part like 'subject' or 'From'.
@@ -125,6 +140,14 @@ a = check_mails(config["invite2ical.email"]["username"],
                 int(config["invite2ical.email"]["fetch_number"]),
                 config["invite2ical.email"]["mailbox"])
 filename = config["invite2ical"]["icsfile"]
+hash_before = ics_hash(filename)
 rc = read_calendar(filename)
 c = generate_calendar(a, config["invite2ical"]["summary"], rc)
 write_calendar(filename, c)
+hash_after = ics_hash(filename)
+if hash_before != hash_after:
+    # change in ics file
+    sys.exit(1)
+else:
+    # ics file not changed
+    sys.exit(0)
