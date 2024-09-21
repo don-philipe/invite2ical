@@ -9,7 +9,8 @@ import sys
 
 def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
     """
-    Check last n mails from sender list with ics attachments. Gives back a list of attachments.
+    Check last n mails from sender list with ics attachments. Gives back a list of attachments. Flags processed mails
+    as seen.
     :param user: email username
     :param passwd: email password
     :param server: email imap server
@@ -18,6 +19,7 @@ def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
     :return: a list with found ics attachments from the named senders
     """
     attachments = []
+    seen_mails = []
     imap = imaplib.IMAP4_SSL(server)
     imap.login(user, passwd)
 
@@ -35,6 +37,12 @@ def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
                         if "attachment" in content_disposition:
                             ics = part.get_payload(decode=True)
                             attachments.append(ics)
+                            seen_mails.append(i)
+
+    # flag processed mails as "seen"
+    imap.select(mailbox, readonly=False)
+    for j in seen_mails:
+        imap.store(str(j), "+FLAGS", "\\Seen")
 
     imap.close()
     imap.logout()
