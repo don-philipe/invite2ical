@@ -7,7 +7,7 @@ import os.path
 import sys
 
 
-def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
+def check_mails(user, passwd, server, sender: str, n: int, mailbox: str, delete: bool = False, copy_to: str = None) -> []:
     """
     Check last n mails from sender list with ics attachments. Gives back a list of attachments. Flags processed mails
     as seen.
@@ -16,6 +16,10 @@ def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
     :param server: email imap server
     :param sender: the email adresse which should be checked
     :param n: number of mails that should be checked
+    :param mailbox: the mailbox to look into for new mails
+    :param delete: whether to delete parsed mails or not (defaults to False). Ignored when copy_to is not None.
+    :param copy_to: a valid mailbox name to copy parsed mails to (defaults to None). Takes precedence over deleted (if
+    that is True).
     :return: a list with found ics attachments from the named senders
     """
     attachments = []
@@ -43,6 +47,12 @@ def check_mails(user, passwd, server, sender: str, n: int, mailbox: str) -> []:
     imap.select(mailbox, readonly=False)
     for j in seen_mails:
         imap.store(str(j), "+FLAGS", "\\Seen")
+        if copy_to is None and delete:
+            imap.store(str(j), "+FLAGS", "\\Deleted")
+    if copy_to is not None:
+        imap.copy(seen_mails, copy_to)
+    elif delete:
+        imap.expunge()
 
     imap.close()
     imap.logout()
@@ -134,6 +144,8 @@ def decode(part):
     :return: tuple with decoded string and charset
     """
     string, encoding = email.header.decode_header(part)[0]
+    if encoding is None:
+        encoding = 'utf-8'
     if isinstance(string, bytes):
         string = string.decode(encoding)
     return string, encoding
