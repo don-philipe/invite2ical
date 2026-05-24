@@ -83,9 +83,9 @@ def generate_calendar(attachments: [], replace_summary: str, calendar=None, orga
         for event in cal.walk(name="VEVENT"):
             event['SUMMARY'] = replace_summary
             if not organizer:
-                event['ORGANIZER'] = ""
+                del event['ORGANIZER']
             if not attendees:
-                event['ATTENDEE'] = ""
+                del event['ATTENDEE']
             if event['UID'] not in uids.keys():
                 # just add, because UID doesn't exist in calendar yet
                 calendar.add_component(event)
